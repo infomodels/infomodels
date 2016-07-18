@@ -1,6 +1,6 @@
 package main
 
-import "github.com/infomodels/cli/cmd"
+import "github.com/infomodels/infomodels/cmd"
 
 func main() {
 	cmd.Execute()
