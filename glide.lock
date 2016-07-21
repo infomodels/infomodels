@@ -1,0 +1,73 @@
+hash: 919c743199e1c239c691f92e20fa6ffef2208cf2191bf87622cd1f4f2716052c
+updated: 2016-07-18T16:02:09.322562852-04:00
+imports:
+- name: github.com/blang/semver
+  version: 60ec3488bfea7cca02b021d106d9911120d25fe9
+- name: github.com/BurntSushi/toml
+  version: 99064174e013895bbd9b025c31100bd1d9b590ca
+- name: github.com/chop-dbhi/data-models-packer
+  version: 03a8142efdef265d6a5c7d370d863440faee5393
+  subpackages:
+  - metadata
+- name: github.com/chop-dbhi/data-models-service
+  version: 7c386845d4ad963ce62aa0c05a043a31a5e2c59a
+  subpackages:
+  - client
+- name: github.com/chop-dbhi/data-models-validator
+  version: ef4286dc290039a5851ca9028fde5ce0c3113da7
+- name: github.com/fsnotify/fsnotify
+  version: a8a77c9133d2d6fd8334f3260d06f60e8d80a5fb
+- name: github.com/hashicorp/hcl
+  version: d8c773c4cba11b11539e3d45f93daeaa5dcf1fa1
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/token
+  - json/parser
+  - hcl/scanner
+  - hcl/strconv
+  - json/scanner
+  - json/token
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/infomodels/datadirectory
+  version: d8ddbe0fedbd83e364ca3163e64f68d78dbc2c77
+- name: github.com/infomodels/datapackage
+  version: 9aea8e33d12ebe2295df9e3f80a35b8aa6b6d520
+- name: github.com/magiconair/properties
+  version: af14024f63beeb153d0048591b39c5788f21cc24
+- name: github.com/mattn/go-runewidth
+  version: d6bea18f789704b5f83375793155289da36a3c7f
+- name: github.com/mitchellh/mapstructure
+  version: 21a35fb16463dfb7c8eee579c65d995d95e64d1e
+- name: github.com/olekukonko/tablewriter
+  version: daf2955e742cf123959884fdff4685aa79b63135
+- name: github.com/Sirupsen/logrus
+  version: a283a10442df8dc09befd873fab202bf8a253d6a
+- name: github.com/spf13/cast
+  version: 27b586b42e29bec072fe7379259cc719e1289da6
+- name: github.com/spf13/cobra
+  version: b24564e919247d7c870fe0ed3738c98d8741aca4
+- name: github.com/spf13/jwalterweatherman
+  version: 33c24e77fb80341fe7130ee7c594256ff08ccc46
+- name: github.com/spf13/pflag
+  version: 367864438f1b1a3c7db4da06a2f55b144e6784e0
+- name: github.com/spf13/viper
+  version: c1ccc378a054ea8d4e38d8c67f6938d4760b53dd
+- name: golang.org/x/crypto
+  version: f28b56427a527c2e35c0bcac123f0a6a8a943cd3
+  subpackages:
+  - openpgp
+  - openpgp/armor
+  - openpgp/errors
+  - openpgp/packet
+  - openpgp/s2k
+  - cast5
+  - openpgp/elgamal
+- name: golang.org/x/sys
+  version: a646d33e2ee3172a661fc09bca23bb4889a41bc8
+  subpackages:
+  - unix
+- name: gopkg.in/yaml.v2
+  version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
+devImports: []

@@ -8,54 +8,96 @@ import (
 	"github.com/spf13/viper"
 )
 
-// compressCmd represents the compress command
 var compressCmd = &cobra.Command{
-	Use:   "compress",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "compress [flags] DATADIR",
+	Short: "compress data into a package",
+	Long: `Compress data in DATADIR into an optionally encrypted package
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Compress the dataset in DATADIR into a package at the filename specified with
+the output flag. If no output is specified, the data is sent to stdout. If
+keyemail is specified, a key registry is searched for a public key and it is
+used to encrypt the data. If keypath is specified, the ascii encoded file at
+that path is used to encrypt the file. Keypath overrides keyemail and if
+neither is given the data is packaged without encryption.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		for _, arg := range args {
+		// TODO: Handle errors with more grace.
 
-			var (
-				d   *datapackage.DataPackage
-				err error
-			)
+		var (
+			d       *datapackage.DataPackage
+			arg     string
+			encrypt = false
+			err     error
+		)
 
+		// Enforce single data directory argument.
+		if len(args) != 1 {
 			log.WithFields(log.Fields{
-				"command":   "compress",
-				"directory": arg,
-			}).Info("beginning compression")
-
-			d = &datapackage.DataPackage{
-				PackagePath:    viper.GetString("output"),
-				KeyPath:        viper.GetString("keyPath"),
-				PublicKeyEmail: viper.GetString("keyEmail"),
-			}
-
-			if err = d.Pack(arg); err != nil {
-				log.WithFields(log.Fields{
-					"command":   "compress",
-					"directory": arg,
-					"error":     err,
-				}).Fatal("error packing")
-			}
+				"args": args,
+			}).Fatal("compress requires 1 argument")
 		}
+
+		arg = args[0]
+
+		// Determine if encryption will happen for logging.
+		if viper.GetString("keypath") != "" || viper.GetString("keyemail") != "" {
+			encrypt = true
+		}
+
+		// Notify that compression is beginning.
+		log.WithFields(log.Fields{
+			"directory": arg,
+			"encrypt":   encrypt,
+		}).Info("beginning dataset compression")
+
+		// On debug, declare that DataPackage object is being created
+		// and all the arguements being used.
+		log.WithFields(log.Fields{
+			"PackagePath":    viper.GetString("output"),
+			"KeyPath":        viper.GetString("keypath"),
+			"PublicKeyEmail": viper.GetString("keyemail"),
+		}).Debug("creating new DataPackage object")
+
+		// Create DataPackage object using all information given. It will
+		// handle all the encryption mechanics if those values are given.
+		d = &datapackage.DataPackage{
+			PackagePath:    viper.GetString("output"),
+			KeyPath:        viper.GetString("keypath"),
+			PublicKeyEmail: viper.GetString("keyemail"),
+		}
+
+		// Fatal and exit if compression fails.
+		// TODO: Fix .tar.gz compatibility.
+		if err = d.Pack(arg); err != nil {
+			log.WithFields(log.Fields{
+				"directory": arg,
+				"package":   d.PackagePath,
+				"encrypt":   encrypt,
+				"error":     err,
+			}).Fatal("error compressing dataset")
+		}
+
+		// Notify that compression succeeded.
+		log.WithFields(log.Fields{
+			"directory": arg,
+			"package":   d.PackagePath,
+		}).Info("finished dataset compression")
+
 	},
 }
 
 func init() {
+
+	// Register this command under the top-level CLI command.
 	RootCmd.AddCommand(compressCmd)
 
-	compressCmd.Flags().StringP("keyPath", "k", "", "path to public key file")
-	compressCmd.Flags().StringP("keyEmail", "e", "", "email of public key")
-	compressCmd.Flags().StringP("output", "o", "", "output path")
-	viper.BindPFlag("keyPath", compressCmd.Flags().Lookup("keyPath"))
-	viper.BindPFlag("keyEmail", compressCmd.Flags().Lookup("keyEmail"))
+	// Set up the compress-command-specific flags.
+	compressCmd.Flags().String("keypath", "", "Path to a public key file for encryption.")
+	compressCmd.Flags().String("keyemail", "", "Email associated with a public key for encryption.")
+	compressCmd.Flags().StringP("output", "o", "", "Compressed package output path.")
+
+	// Bind viper keys to the flag values.
+	viper.BindPFlag("keypath", compressCmd.Flags().Lookup("keypath"))
+	viper.BindPFlag("keyemail", compressCmd.Flags().Lookup("keyemail"))
 	viper.BindPFlag("output", compressCmd.Flags().Lookup("output"))
 }
