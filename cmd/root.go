@@ -51,6 +51,7 @@ func init() {
 	// Set up global flags that can be specified at any point on the command
 	// line. The values and defaults will be managed by viper.
 	RootCmd.PersistentFlags().String("service", "", "Data models service URL.")
+	RootCmd.PersistentFlags().String("dmsaservice", "", "Data models SQLAlchemy service URL.")
 	RootCmd.PersistentFlags().StringP("model", "m", "", "Data model of the dataset.")
 	RootCmd.PersistentFlags().StringP("modelv", "v", "", "Data model version number.")
 	RootCmd.PersistentFlags().String("loglvl", "", "Logging output level  [DEBUG|INFO|WARN|ERROR|FATAL].")
@@ -58,6 +59,7 @@ func init() {
 
 	// Bind viper key names to the global flags.
 	viper.BindPFlag("service", RootCmd.PersistentFlags().Lookup("service"))
+	viper.BindPFlag("dmsaservice", RootCmd.PersistentFlags().Lookup("dmsaservice"))
 	viper.BindPFlag("model", RootCmd.PersistentFlags().Lookup("model"))
 	viper.BindPFlag("modelv", RootCmd.PersistentFlags().Lookup("modelv"))
 	viper.BindPFlag("loglvl", RootCmd.PersistentFlags().Lookup("loglvl"))
@@ -65,6 +67,7 @@ func init() {
 
 	// Set defaults in viper.
 	viper.SetDefault("service", "https://data-models-service.research.chop.edu/")
+	viper.SetDefault("dmsaservice", "https://data-models-sqlalchemy.research.chop.edu/")
 	viper.SetDefault("loglvl", "INFO")
 	if !log.IsTerminal() {
 		// Default to json instead of logrus default text when no tty attached.
