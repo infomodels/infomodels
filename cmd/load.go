@@ -102,16 +102,42 @@ constraints and finally the indexes are created.`,
 			log.WithFields(logFields).Fatal("Database Open failed")
 		}
 
-		err = db.CreateTables()
-		if err != nil {
-			logFields["err"] = err.Error()
-			log.WithFields(logFields).Fatal("CreateTables() failed")
-		}
+		if !viper.GetBool("undo") {
 
-		err = db.Load(d)
-		if err != nil {
-			logFields["err"] = err.Error()
-			log.WithFields(logFields).Fatal("Load() failed")
+			err = db.CreateTables()
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Fatal("CreateTables() failed")
+			}
+
+			err = db.Load(d)
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Fatal("Load() failed")
+			}
+
+		} else {
+
+			// Drop constraints, indexes, and tables while ignoring 'does not exist' errors.
+
+			err = db.DropConstraints("normal")
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Fatal("Unexpected error while dropping constraints")
+			}
+
+			err = db.DropIndexes("normal")
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Warn("Ignoring 'does not exist' errors while dropping indexes")
+			}
+
+			err = db.DropTables("normal")
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Warn("Ignoring errors while dropping tables")
+			}
+
 		}
 
 		// TODO: figure out password handling that does not involve entering
@@ -131,9 +157,11 @@ func init() {
 	loadCmd.Flags().StringP("dburi", "d", "", "Database URI to load the dataset into. Required.")
 	loadCmd.Flags().StringP("dbpass", "p", "", "Database password.")
 	loadCmd.Flags().StringP("schema", "s", "", "Schema into which to load. Required.")
+	loadCmd.Flags().Bool("undo", false, "Undo the load; delete all tables.")
 
 	// Bind viper keys to the flag values.
 	viper.BindPFlag("dburi", loadCmd.Flags().Lookup("dburi"))
 	viper.BindPFlag("dbpass", loadCmd.Flags().Lookup("dbpass"))
 	viper.BindPFlag("schema", loadCmd.Flags().Lookup("schema"))
+	viper.BindPFlag("undo", loadCmd.Flags().Lookup("undo"))
 }

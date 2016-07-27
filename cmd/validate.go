@@ -91,8 +91,13 @@ the model definition.`,
 
 		// Hack to get Model and ModelVersion actually on to the DataDirectory
 		// object, should be done by library.
-		d.Model = d.RecordMaps[0]["cdm"]
-		d.ModelVersion = d.RecordMaps[0]["cdm-version"]
+		// Kevin's hack: command-line args should override file-based configuration
+		if d.Model == "" {
+			d.Model = d.RecordMaps[0]["cdm"]
+		}
+		if d.ModelVersion == "" {
+			d.ModelVersion = d.RecordMaps[0]["cdm-version"]
+		}
 
 		// Validate metadata information and checksums, fatal and exit on err.
 		// This checks the attributes on the DataDirectory object (any command
