@@ -7,6 +7,7 @@ import (
 	"github.com/infomodels/datadirectory"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"time"
 )
 
 var loadCmd = &cobra.Command{
@@ -104,17 +105,52 @@ constraints and finally the indexes are created.`,
 
 		if !viper.GetBool("undo") {
 
-			err = db.CreateTables()
+			err = db.CreateTables("strict")
 			if err != nil {
 				logFields["err"] = err.Error()
 				log.WithFields(logFields).Fatal("CreateTables() failed")
 			}
+
+			start := time.Now()
 
 			err = db.Load(d)
 			if err != nil {
 				logFields["err"] = err.Error()
 				log.WithFields(logFields).Fatal("Load() failed")
 			}
+
+			// TODO: add a switch to prevent adding indexes or constraints
+			// TODO: add separate commands for adding indexes and constraints
+
+			elapsed := time.Since(start)
+			logFields["minutes"] = elapsed.Minutes()
+			log.WithFields(logFields).Info("Loaded. Beginning to add indexes.")
+
+			indexesStart := time.Now()
+			err = db.CreateIndexes("strict")
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Warn("Error while adding indexes")
+			}
+
+			elapsed = time.Since(indexesStart)
+			logFields["minutes"] = elapsed.Minutes()
+			log.WithFields(logFields).Info("Indexes added. Beginning to add constraints.")
+
+			constraintsStart := time.Now()
+			err = db.CreateConstraints("strict")
+			if err != nil {
+				logFields["err"] = err.Error()
+				log.WithFields(logFields).Warn("Error while adding constraints")
+			}
+
+			elapsed = time.Since(constraintsStart)
+			logFields["minutes"] = elapsed.Minutes()
+			log.WithFields(logFields).Info("Constraints added.")
+
+			elapsed = time.Since(start)
+			logFields["minutes"] = elapsed.Minutes()
+			log.WithFields(logFields).Info("Load complete.")
 
 		} else {
 
@@ -129,13 +165,13 @@ constraints and finally the indexes are created.`,
 			err = db.DropIndexes("normal")
 			if err != nil {
 				logFields["err"] = err.Error()
-				log.WithFields(logFields).Warn("Ignoring 'does not exist' errors while dropping indexes")
+				log.WithFields(logFields).Fatal("Unexpected error while dropping indexes")
 			}
 
 			err = db.DropTables("normal")
 			if err != nil {
 				logFields["err"] = err.Error()
-				log.WithFields(logFields).Warn("Ignoring errors while dropping tables")
+				log.WithFields(logFields).Fatal("Unexpected error while dropping tables")
 			}
 
 		}
