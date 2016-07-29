@@ -12,12 +12,21 @@ import (
 
 var loadCmd = &cobra.Command{
 	Use:   "load [flags] DATADIR",
-	Short: "load a dataset into a database",
+	Short: "load a dataset into a database (and add indexes and constraints)",
 	Long: `Load the dataset in DATADIR into the dburi specified database
 
-Load the dataset in DATADIR by using the metadata to determine which file to
-load into which table. The model tables are created, data loaded, and then the
-constraints and finally the indexes are created.`,
+Load the dataset in DATADIR by using the metadata to determine which
+file to load into which table. The model tables are created, data
+loaded, indexes created, and finally constraints added.
+
+The tables are automatically vacuum/analyzed after they are loaded.
+
+The required searchPath switch is a PostgreSQL search_path value
+containing a comma-separated list of schema names. The first schema in
+the list is the primary schema into which the data will be
+loaded. Additional schemas may be required when applying constraints
+if the loaded tables have foreign keys into other schemas.
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var (
@@ -42,9 +51,9 @@ constraints and finally the indexes are created.`,
 			log.Fatal("load requires a dburi")
 		}
 
-		// Enforce required schema.
-		if viper.GetString("schema") == "" {
-			log.Fatal("load requires a schema")
+		// Enforce required search path.
+		if viper.GetString("searchPath") == "" {
+			log.Fatal("load requires a searchPath")
 		}
 
 		log.WithFields(log.Fields{
@@ -93,11 +102,11 @@ constraints and finally the indexes are created.`,
 			"DataModel":    dataModel,
 			"ModelVersion": modelVersion,
 			"DbUrl":        viper.GetString("dburi"),
-			"Schema":       viper.GetString("schema"),
+			"SearchPath":   viper.GetString("searchPath"),
 			"Service":      viper.GetString("service"),
 		}
 
-		db, err = database.Open(dataModel, modelVersion, viper.GetString("dburi"), viper.GetString("schema"), viper.GetString("dmsaservice"), "", "")
+		db, err = database.Open(dataModel, modelVersion, viper.GetString("dburi"), viper.GetString("searchPath"), viper.GetString("dmsaservice"), "", "")
 		if err != nil {
 			logFields["err"] = err.Error()
 			log.WithFields(logFields).Fatal("Database Open failed")
@@ -123,33 +132,33 @@ constraints and finally the indexes are created.`,
 			// TODO: add separate commands for adding indexes and constraints
 
 			elapsed := time.Since(start)
-			logFields["minutes"] = elapsed.Minutes()
+			logFields["durationMinutes"] = elapsed.Minutes()
 			log.WithFields(logFields).Info("Loaded. Beginning to add indexes.")
 
 			indexesStart := time.Now()
 			err = db.CreateIndexes("strict")
 			if err != nil {
 				logFields["err"] = err.Error()
-				log.WithFields(logFields).Warn("Error while adding indexes")
+				log.WithFields(logFields).Fatal("Error while adding indexes")
 			}
 
 			elapsed = time.Since(indexesStart)
-			logFields["minutes"] = elapsed.Minutes()
+			logFields["durationMinutes"] = elapsed.Minutes()
 			log.WithFields(logFields).Info("Indexes added. Beginning to add constraints.")
 
 			constraintsStart := time.Now()
 			err = db.CreateConstraints("strict")
 			if err != nil {
 				logFields["err"] = err.Error()
-				log.WithFields(logFields).Warn("Error while adding constraints")
+				log.WithFields(logFields).Fatal("Error while adding constraints")
 			}
 
 			elapsed = time.Since(constraintsStart)
-			logFields["minutes"] = elapsed.Minutes()
+			logFields["durationMinutes"] = elapsed.Minutes()
 			log.WithFields(logFields).Info("Constraints added.")
 
 			elapsed = time.Since(start)
-			logFields["minutes"] = elapsed.Minutes()
+			logFields["durationMinutes"] = elapsed.Minutes()
 			log.WithFields(logFields).Info("Load complete.")
 
 		} else {
@@ -189,15 +198,16 @@ func init() {
 	// Register this command under the top-level CLI command.
 	RootCmd.AddCommand(loadCmd)
 
-	// Set up the load-command-specific flags.
-	loadCmd.Flags().StringP("dburi", "d", "", "Database URI to load the dataset into. Required.")
-	loadCmd.Flags().StringP("dbpass", "p", "", "Database password.")
-	loadCmd.Flags().StringP("schema", "s", "", "Schema into which to load. Required.")
-	loadCmd.Flags().Bool("undo", false, "Undo the load; delete all tables.")
+	// Made these into global flags because I couldn't figure out how to use them in another subcommand also.
+	// // Set up the load-command-specific flags.
+	// loadCmd.Flags().StringP("dburi", "d", "", "Database URI to load the dataset into. Required.")
+	// //	loadCmd.Flags().StringP("dbpass", "p", "", "Database password.")
+	// loadCmd.Flags().StringP("searchPath", "s", "", "SearchPath for the load (secondary schemas may be needed for adding constraints). Required.")
+	// loadCmd.Flags().Bool("undo", false, "Undo the load; delete all tables.")
 
-	// Bind viper keys to the flag values.
-	viper.BindPFlag("dburi", loadCmd.Flags().Lookup("dburi"))
-	viper.BindPFlag("dbpass", loadCmd.Flags().Lookup("dbpass"))
-	viper.BindPFlag("schema", loadCmd.Flags().Lookup("schema"))
-	viper.BindPFlag("undo", loadCmd.Flags().Lookup("undo"))
+	// // Bind viper keys to the flag values.
+	// viper.BindPFlag("dburi", loadCmd.Flags().Lookup("dburi"))
+	// //	viper.BindPFlag("dbpass", loadCmd.Flags().Lookup("dbpass"))
+	// viper.BindPFlag("searchPath", loadCmd.Flags().Lookup("searchPath"))
+	// viper.BindPFlag("undo", loadCmd.Flags().Lookup("undo"))
 }
