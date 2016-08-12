@@ -51,25 +51,42 @@ func init() {
 	// Set up global flags that can be specified at any point on the command
 	// line. The values and defaults will be managed by viper.
 	RootCmd.PersistentFlags().String("service", "", "Data models service URL.")
+	RootCmd.PersistentFlags().String("dmsaservice", "", "Data models SQLAlchemy service URL.")
 	RootCmd.PersistentFlags().StringP("model", "m", "", "Data model of the dataset.")
 	RootCmd.PersistentFlags().StringP("modelv", "v", "", "Data model version number.")
 	RootCmd.PersistentFlags().String("loglvl", "", "Logging output level  [DEBUG|INFO|WARN|ERROR|FATAL].")
 	RootCmd.PersistentFlags().String("logfmt", "", "Logging output format [tty|text|json].")
 
+	// Flags for constrain and load -- seemingly subcommands can't share flags with out the flags being global.  See https://github.com/spf13/cobra/issues/277.
+	RootCmd.PersistentFlags().StringP("dburi", "d", "", "Database URI to load the dataset into. Required by load, constrain.")
+	RootCmd.PersistentFlags().StringP("searchPath", "s", "", "SearchPath for the load (secondary schemas may be needed for adding constraints). Required by load, constrain.")
+	RootCmd.PersistentFlags().Bool("undo", false, "Undo the load; delete all tables.")
+
 	// Bind viper key names to the global flags.
 	viper.BindPFlag("service", RootCmd.PersistentFlags().Lookup("service"))
+	viper.BindPFlag("dmsaservice", RootCmd.PersistentFlags().Lookup("dmsaservice"))
 	viper.BindPFlag("model", RootCmd.PersistentFlags().Lookup("model"))
 	viper.BindPFlag("modelv", RootCmd.PersistentFlags().Lookup("modelv"))
 	viper.BindPFlag("loglvl", RootCmd.PersistentFlags().Lookup("loglvl"))
 	viper.BindPFlag("logfmt", RootCmd.PersistentFlags().Lookup("logfmt"))
 
+	// Viper flag bindings for constrain and load.
+	viper.BindPFlag("dburi", RootCmd.PersistentFlags().Lookup("dburi"))
+	viper.BindPFlag("searchPath", RootCmd.PersistentFlags().Lookup("searchPath"))
+	viper.BindPFlag("undo", RootCmd.PersistentFlags().Lookup("undo"))
+
 	// Set defaults in viper.
 	viper.SetDefault("service", "https://data-models-service.research.chop.edu/")
+	viper.SetDefault("dmsaservice", "https://data-models-sqlalchemy.research.chop.edu/")
 	viper.SetDefault("loglvl", "INFO")
 	if !log.IsTerminal() {
 		// Default to json instead of logrus default text when no tty attached.
 		viper.SetDefault("logfmt", "json")
 	}
+
+	viper.SetDefault("dburi", "")
+	viper.SetDefault("searchPath", "")
+	viper.SetDefault("undo", false)
 
 	// Set up the dummy version flag. It will actually be handled in the
 	// main.main function, but we want it to show up in the help.
